@@ -1,5 +1,5 @@
 pipeline {
-    agent {label 'mylabel'}
+    agent {label 'master'}
     
     
     
