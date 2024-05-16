@@ -4,29 +4,22 @@ pipeline {
     
     
   environment{
-      GITHUB_URL = "https://github.com/akibhasan15/Node-Simple-web"
-     BACKUP= "./backup"
+      //PATH-NAME   
+      BACKUP= "./backup"
       TEMP= "./temp"
       APP= "./express"
+      PORT=4000  //testing port on agent
+      //APP-DETAILS
+      APP_NAME="express"
   }
 
    stages {
    stage('Test') {
             steps {
                 
-                //git branch: 'master',
-                //url: "${GITHUB_URL}"
-             //    git branch: [
-             //       [name: 'main'],
-             //       [name: 'test']
-            //    ],
-               // credentialsId: 'your_credentials_id', 
-             //   url: "${GITHUB_URL}"
-                
-                
                  sshagent(credentials: ['productionHost']) {
                withCredentials([string(credentialsId: 'UNIP',variable: 'userAtIP')]) {
-                sh 'scp  ${userAtIP}:./configurationfile/express/* ./'
+                sh 'scp  ${userAtIP}:./configurationfile/${APP_NAME}/* ./'
                    
                }}
                  nodejs(nodeJSInstallationName: 'node'){
@@ -34,19 +27,10 @@ pipeline {
                  sh "npm install"
                  sh "npm install pm2@latest -g" 
                  sh "pm2 start server.js"
-                 //sh "node server.js"
-                 //sh ' if [ curl -s -o /dev/null -w "%{http_code}" localhost:3000 == 200 ];then echo "successful";fi'
                  sh 'STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" localhost:3000); if [ "$STATUS_CODE" -eq 200 ]; then echo "Success"; else  error "Request failed with status code: ${STATUS_CODE}"; fi'
-                 //sh "sleep(10)"
                   sh "pm2 stop server"
-                // sh ""
-                 
-                 sh "cat package.json && ls -a"
                  sh "rm -rf ./node_modules"
-                 sh "tar czfv ../express.tar.gz ."
-                //sh "cd ./app1 && mvn -Dmaven.test.failure.ignore=true clean package"
-                // To run Maven on a Windows agent, use
-               // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+                 sh "tar czfv ../${APP_NAME}.tar.gz ."
             }}
 
         } 
@@ -59,18 +43,15 @@ pipeline {
             steps{
                sshagent(credentials: ['productionHost']) {
                withCredentials([string(credentialsId: 'UNIP',variable: 'userAtIP')]) {
-                 // sh 'ssh ${userAtIP} "who"'
-                
-                 sh 'scp ../express.tar.gz  ${userAtIP}: '
+                 sh 'scp ../{APP_NAME}.tar.gz  ${userAtIP}: '
                 // sh 'ssh -o StrictHostKeyChecking=no ${userAtIP} uname -a'
-                 sh 'ssh ${userAtIP} "if curl -fqI http://localhost:3000;then pm2 stop server; else echo "server stopped long ago"; fi"'
-                 sh 'ssh ${userAtIP} "mkdir -p backup && if [ -f ./express/pacakage.json ]; then tar czvf ./backup/express.$(date +%F_%R).tar.gz ./express/;fi"'
-                 sh 'ssh ${userAtIP} "mkdir -p temp && tar xzfv ./express.tar.gz -C ./temp/ && cp -u -r ./temp/* ./express/ "'
+                 sh 'ssh ${userAtIP} "if curl -fqI http://localhost:${PORT};then pm2 stop server; else echo "server stopped long ago"; fi"'
+                 sh 'ssh ${userAtIP} "mkdir -p ${BACKUP} && if [ -f  ./${APP_NAME}/pacakage.json ]; then tar czvf ${BACKUP}/${APP_NAME}.$(date +%F_%R).tar.gz ${APP}/;fi"'
+                 sh 'ssh ${userAtIP} "mkdir -p ${TEMP} && tar xzfv ./${APP_NAME}.tar.gz -C ${TEMP}/ && cp -u -r ${TEMP}/* ${APP}/ "'
                  //sh "npm install pm2@latest -g" 
-                 sh 'ssh ${userAtIP} "cd express && npm install && pm2 start server.js"'
-                 //sh 'ssh ${userAtIP} "STATUS_CODE=$(curl -s -o /dev/null -Iw "%{http_code}" localhost:3000); if [ "$STATUS_CODE" -eq "200" ]; then echo "Success"; else  error "Request failed with status code: ${STATUS_CODE}"; fi"'
-                 sh 'ssh ${userAtIP} "if [ -f ./express.tar.gz ]; then rm ./express.tar.gz;fi"'
-                sh 'ssh ${userAtIP} "if curl -fqI http://localhost:3000;then echo "sucessfully deployed"; else error "deployment failed"; fi"'
+                 sh 'ssh ${userAtIP} "cd ${APP} && npm install && pm2 start server.js"'
+                 sh 'ssh ${userAtIP} "if [ -f ./${APP_NAME}.tar.gz ]; then rm ./${APP_NAME}.tar.gz;fi"'
+                sh 'ssh ${userAtIP} "if curl -fqI http://localhost:${PORT};then echo "sucessfully deployed on TEST environment"; else error "deployment failed on TEST environment"; fi"'
                
                 
 }
@@ -83,21 +64,18 @@ pipeline {
          
              expression{env.GIT_BRANCH=="origin/main"}
          }
-            steps{
+             steps{
                sshagent(credentials: ['productionHost']) {
                withCredentials([string(credentialsId: 'UNIP',variable: 'userAtIP')]) {
-                 // sh 'ssh ${userAtIP} "who"'
-                
-                 sh 'scp ../express.tar.gz  ${userAtIP}: '
+                 sh 'scp ../{APP_NAME}.tar.gz  ${userAtIP}: '
                 // sh 'ssh -o StrictHostKeyChecking=no ${userAtIP} uname -a'
-                 sh 'ssh ${userAtIP} "if curl -fqI http://localhost:3000;then pm2 stop server; else echo "server stopped long ago"; fi"'
-                 sh 'ssh ${userAtIP} "mkdir -p backup && if [ -f ./express/pacakage.json ]; then tar czvf ./backup/express.$(date +%F_%R).tar.gz ./express/;fi"'
-                 sh 'ssh ${userAtIP} "mkdir -p temp && tar xzfv ./express.tar.gz -C ./temp/ && cp -u -r ./temp/* ./express/ "'
+                 sh 'ssh ${userAtIP} "if curl -fqI http://localhost:${PORT};then pm2 stop server; else echo "server stopped long ago"; fi"'
+                 sh 'ssh ${userAtIP} "mkdir -p ${BACKUP} && if [ -f  ./${APP_NAME}/pacakage.json ]; then tar czvf ${BACKUP}/${APP_NAME}.$(date +%F_%R).tar.gz ${APP}/;fi"'
+                 sh 'ssh ${userAtIP} "mkdir -p ${TEMP} && tar xzfv ./${APP_NAME}.tar.gz -C ${TEMP}/ && cp -u -r ${TEMP}/* ${APP}/ "'
                  //sh "npm install pm2@latest -g" 
-                 sh 'ssh ${userAtIP} "cd express && npm install && pm2 start server.js"'
-                 //sh 'ssh ${userAtIP} "STATUS_CODE=$(curl -s -o /dev/null -Iw "%{http_code}" localhost:3000); if [ "$STATUS_CODE" -eq "200" ]; then echo "Success"; else  error "Request failed with status code: ${STATUS_CODE}"; fi"'
-                 sh 'ssh ${userAtIP} "if [ -f ./express.tar.gz ]; then rm ./express.tar.gz;fi"'
-                sh 'ssh ${userAtIP} "if curl -fqI http://localhost:3000;then echo "sucessfully deployed"; else error "deployment failed"; fi"'
+                 sh 'ssh ${userAtIP} "cd ${APP} && npm install && pm2 start server.js"'
+                 sh 'ssh ${userAtIP} "if [ -f ./${APP_NAME}.tar.gz ]; then rm ./${APP_NAME}.tar.gz;fi"'
+                sh 'ssh ${userAtIP} "if curl -fqI http://localhost:${PORT};then echo "sucessfully deployed on PRODUCTION environment"; else error "deployment failed on PRODUCTION environment"; fi"'
                
                 
 }
