@@ -23,7 +23,7 @@ pipeline {
                    
                }}
                  nodejs(nodeJSInstallationName: 'node'){
-                 sh "cp -f ../package.json ./"
+                 //sh "cp -f ../package.json ./"
                  sh "npm install"
                  sh "npm install pm2@latest -g" 
                  sh "pm2 start server.js"
