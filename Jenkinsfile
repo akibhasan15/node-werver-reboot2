@@ -8,7 +8,7 @@ pipeline {
       BACKUP= "./backup"
       TEMP= "./temp"
       APP= "./express"
-      PORT=4000  //testing port on agent
+      PORT=3000  //testing port on agent
       //APP-DETAILS
       APP_NAME="express"
   }
@@ -27,7 +27,7 @@ pipeline {
                  sh "npm install"
                  sh "npm install pm2@latest -g" 
                  sh "pm2 start server.js"
-                 sh 'STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" localhost:3000); if [ "$STATUS_CODE" -eq 200 ]; then echo "Success"; else  error "Request failed with status code: ${STATUS_CODE}"; fi'
+                 sh 'STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" localhost:${PORT}); if [ "$STATUS_CODE" -eq 200 ]; then echo "Success"; else  error "Request failed with status code: ${STATUS_CODE}"; fi'
                   sh "pm2 stop server"
                  sh "rm -rf ./node_modules"
                  sh "tar czfv ../${APP_NAME}.tar.gz ."
