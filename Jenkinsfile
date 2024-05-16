@@ -43,7 +43,7 @@ pipeline {
             steps{
                sshagent(credentials: ['productionHost']) {
                withCredentials([string(credentialsId: 'UNIP',variable: 'userAtIP')]) {
-                 sh 'scp ../{APP_NAME}.tar.gz  ${userAtIP}: '
+                 sh 'scp ../${APP_NAME}.tar.gz  ${userAtIP}: '
                 // sh 'ssh -o StrictHostKeyChecking=no ${userAtIP} uname -a'
                  sh 'ssh ${userAtIP} "if curl -fqI http://localhost:${PORT};then pm2 stop server; else echo "server stopped long ago"; fi"'
                  sh 'ssh ${userAtIP} "mkdir -p ${BACKUP} && if [ -f  ./${APP_NAME}/pacakage.json ]; then tar czvf ${BACKUP}/${APP_NAME}.$(date +%F_%R).tar.gz ${APP}/;fi"'
